@@ -1,0 +1,119 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Creates a Bring Your Own Model (BYOM) ModelGateway connection in Microsoft Foundry targeting Google's OpenAI-compatible Gemini API."
+  },
+  "parameters": {
+    "foundryAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Existing Microsoft Foundry (Microsoft.CognitiveServices/accounts, kind AIServices) resource name."
+      }
+    },
+    "foundryProjectName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional Foundry project name. Leave empty to create the connection at the parent Foundry resource scope, or set to scope the connection to a single project."
+      }
+    },
+    "connectionName": {
+      "type": "string",
+      "defaultValue": "gemini-byom",
+      "metadata": {
+        "description": "Connection name used in Foundry model strings (<connectionName>/<modelName>)."
+      }
+    },
+    "geminiApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Google AI Studio API key (sent upstream as 'Authorization: Bearer <key>')."
+      }
+    },
+    "geminiOpenAiBaseUrl": {
+      "type": "string",
+      "defaultValue": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "metadata": {
+        "description": "Google Gemini OpenAI-compatible base URL (without '/chat/completions')."
+      }
+    },
+    "modelNames": {
+      "type": "array",
+      "defaultValue": [
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash"
+      ],
+      "metadata": {
+        "description": "Static Gemini model IDs exposed by this connection."
+      }
+    },
+    "shareAcrossProjects": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "When created at the parent Foundry resource scope, makes the connection available across child projects."
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "staticModels",
+        "count": "[length(parameters('modelNames'))]",
+        "input": {
+          "name": "[parameters('modelNames')[copyIndex('staticModels')]]",
+          "properties": {
+            "model": {
+              "name": "[parameters('modelNames')[copyIndex('staticModels')]]",
+              "version": "",
+              "format": "OpenAI"
+            }
+          }
+        }
+      }
+    ],
+    "connectionProperties": {
+      "authType": "ApiKey",
+      "category": "ModelGateway",
+      "target": "[parameters('geminiOpenAiBaseUrl')]",
+      "isSharedToAll": "[parameters('shareAcrossProjects')]",
+      "credentials": {
+        "key": "[parameters('geminiApiKey')]"
+      },
+      "metadata": {
+        "authConfig": "{\"type\":\"api_key\",\"name\":\"Authorization\",\"format\":\"Bearer {api_key}\"}",
+        "customHeaders": "{}",
+        "deploymentInPath": "false",
+        "inferenceAPIVersion": "",
+        "models": "[string(variables('staticModels'))]"
+      }
+    }
+  },
+  "resources": [
+    {
+      "condition": "[empty(parameters('foundryProjectName'))]",
+      "type": "Microsoft.CognitiveServices/accounts/connections",
+      "apiVersion": "2025-04-01-preview",
+      "name": "[format('{0}/{1}', parameters('foundryAccountName'), parameters('connectionName'))]",
+      "properties": "[variables('connectionProperties')]"
+    },
+    {
+      "condition": "[not(empty(parameters('foundryProjectName')))]",
+      "type": "Microsoft.CognitiveServices/accounts/projects/connections",
+      "apiVersion": "2025-04-01-preview",
+      "name": "[format('{0}/{1}/{2}', parameters('foundryAccountName'), parameters('foundryProjectName'), parameters('connectionName'))]",
+      "properties": "[variables('connectionProperties')]"
+    }
+  ],
+  "outputs": {
+    "connectionName": {
+      "type": "string",
+      "value": "[parameters('connectionName')]"
+    },
+    "primaryModelIdentifier": {
+      "type": "string",
+      "value": "[format('{0}/{1}', parameters('connectionName'), parameters('modelNames')[0])]"
+    }
+  }
+}
