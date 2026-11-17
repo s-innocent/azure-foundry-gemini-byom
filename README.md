@@ -48,6 +48,7 @@ flowchart TB
 | Path | Purpose |
 |---|---|
 | [`README.md`](./README.md) | End-to-end Portal, CLI/ARM, SDK, and troubleshooting tutorial |
+| [`assets/foundry-agent-playground-gemini.png`](./assets/foundry-agent-playground-gemini.png) | Foundry Agent Playground UI running `gemini-3.5-flash-lite` via a BYOM connection |
 | [`infra/model-gateway-connection.json`](./infra/model-gateway-connection.json) | Declarative ARM template to deploy the Foundry `ModelGateway` connection |
 | [`scripts/Invoke-FoundryGeminiSmokeTest.ps1`](./scripts/Invoke-FoundryGeminiSmokeTest.ps1) | Zero-dependency PowerShell smoke test (creates a temp agent, invokes Gemini, and cleans up) |
 | [`scripts/smoke_test.py`](./scripts/smoke_test.py) | Python `azure-ai-projects` v2 smoke test using `DefaultAzureCredential` |
@@ -212,6 +213,10 @@ az deployment group create `
    ```text
    Reply in one short sentence confirming which Gemini model you are.
    ```
+
+![Microsoft Foundry Agent Playground running Gemini 3.5 Flash-Lite via a BYOM connection](./assets/foundry-agent-playground-gemini.png)
+
+*Microsoft Foundry Agent Playground running a connected Gemini model (`<connection-name>/gemini-3.5-flash-lite` with the `Connections` badge, per-turn latency/token counters, and integrated `Traces`).*
 
 ### Option B: PowerShell End-to-End Smoke Test (No Extra Packages)
 
